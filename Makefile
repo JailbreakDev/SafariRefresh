@@ -1,4 +1,4 @@
-THEOS_DEVICE_IP = iPad
+THEOS_DEVICE_IP = iPhone
 TARGET := iphone:clang:8.1
 ARCHS = armv7 arm64
 include theos/makefiles/common.mk
@@ -6,7 +6,6 @@ include theos/makefiles/common.mk
 TWEAK_NAME = SafariRefresh
 SafariRefresh_FILES = Tweak.xm
 SafariRefresh_FRAMEWORKS = UIKit
-SafariRefresh_CFLAGS = -fobjc-arc
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 

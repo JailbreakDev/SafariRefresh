@@ -1,10 +1,15 @@
+#include <substrate.h>
+#import <objc/runtime.h>
+
 @interface BrowserController : UIViewController
 +(id)sharedBrowserController;
 -(void)reloadKeyPressed;
--(UIRefreshControl *)createReloadPageControl; //new
+-(void)createReloadPageControl; //new
 @end
 
-UIRefreshControl *reloadPageControl = nil;
+@interface BrowserController (RefreshControl)
+@property (nonatomic, strong) UIRefreshControl *reloadPageControl;
+@end
 
 %hook BrowserController
 
@@ -13,9 +18,10 @@ UIRefreshControl *reloadPageControl = nil;
 
 	if (self) {
 		@try {
-			UIScrollView *scrollView = [(BrowserController *)self valueForKey:@"_scrollView"];
+			UIScrollView *scrollView = MSHookIvar<UIScrollView *>(self,"_scrollView");
 			if (scrollView) {
-				[scrollView addSubview:[(BrowserController *)self createReloadPageControl]];
+				[(BrowserController *)self createReloadPageControl];
+				[scrollView addSubview:((BrowserController *)self).reloadPageControl];
 			}
 		} @catch (NSException *e) {
 			NSLog(@"[SafariRefresh] caught exception: %@",e);
@@ -27,23 +33,29 @@ UIRefreshControl *reloadPageControl = nil;
 
 %new
 
--(UIRefreshControl *)createReloadPageControl {
-	if (reloadPageControl && reloadPageControl.superview) {
-		[reloadPageControl removeFromSuperview];
-		reloadPageControl = nil;
-	}
-	if (!reloadPageControl) {
-		reloadPageControl = [[UIRefreshControl alloc] init];
-		[reloadPageControl addTarget:self action:@selector(reloadKeyPressed) forControlEvents:UIControlEventValueChanged];
-	}
-	return reloadPageControl;
+-(void)createReloadPageControl {
+	[self.reloadPageControl removeFromSuperview];
+	self.reloadPageControl = [[UIRefreshControl alloc] init];
+	[self.reloadPageControl addTarget:self action:@selector(reloadKeyPressed) forControlEvents:UIControlEventValueChanged];
+}
+
+%new
+
+- (void)setReloadPageControl:(UIRefreshControl *)refreshControl {
+     objc_setAssociatedObject(self, @selector(reloadPageControl), refreshControl, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+%new
+- (UIRefreshControl *)reloadPageControl {
+    return objc_getAssociatedObject(self, @selector(reloadPageControl));
 }
 
 -(void)resume {
 	@try {
-		UIScrollView *scrollView = [(BrowserController *)self valueForKey:@"_scrollView"];
+		UIScrollView *scrollView = MSHookIvar<UIScrollView *>(self,"_scrollView");
 		if (scrollView) {
-			[scrollView addSubview:[self createReloadPageControl]];
+			[self createReloadPageControl];
+			[scrollView addSubview:self.reloadPageControl];
 		}
 	} @catch (NSException *e) {
 		NSLog(@"[SafariRefresh] caught exception: %@",e);
@@ -52,18 +64,10 @@ UIRefreshControl *reloadPageControl = nil;
 }
 
 -(void)reloadKeyPressed {
-	if (reloadPageControl) {
-		[reloadPageControl endRefreshing];
+	if (self.reloadPageControl) {
+		[self.reloadPageControl endRefreshing];
 	}
 	%orig;
-}
-
--(void)scrollViewWasRemoved:(id)removed {
-	%orig;
-	if (reloadPageControl && reloadPageControl.superview) {
-		[reloadPageControl removeFromSuperview];
-		reloadPageControl = nil;
-	}
 }
 
 %end
