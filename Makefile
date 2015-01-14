@@ -6,6 +6,7 @@ include theos/makefiles/common.mk
 TWEAK_NAME = SafariRefresh
 SafariRefresh_FILES = Tweak.xm
 SafariRefresh_FRAMEWORKS = UIKit
+SafariRefresh_CFLAGS = -fobjc-arc
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 
