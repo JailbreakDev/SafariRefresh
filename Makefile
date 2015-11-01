@@ -1,5 +1,4 @@
-THEOS_DEVICE_IP = iPhone
-TARGET := iphone:clang:8.1
+TARGET := iphone:clang:9.0:8.0
 ARCHS = armv7 arm64
 include theos/makefiles/common.mk
 
